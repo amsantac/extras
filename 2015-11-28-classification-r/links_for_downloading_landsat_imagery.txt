@@ -1,0 +1,4 @@
+Download any Landsat image for path/row 7/57 from:
+
+https://libra.developmentseed.org/  (for Landsat 8 imagery)
+http://earthexplorer.usgs.gov/   (for all Landsat satellites)
