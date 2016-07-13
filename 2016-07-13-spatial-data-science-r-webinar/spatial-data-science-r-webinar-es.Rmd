@@ -1,7 +1,7 @@
 ---
 title: "Intro a Spatial Data Science con R"
 author: "Alí Santacruz"
-date: "July 13, 2016"
+date: "Julio 13, 2016"
 output: html_document
 ---
 
@@ -11,11 +11,13 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, cache = TRU
 
 <br>
 
-Hay una gran cantidad de paquetes de R utiles para trabajar con datos espaciales. Para los ejemplos de este documento se requiere tener los siguientes: 
+Hay una gran cantidad de paquetes de R útiles para trabajar con datos espaciales. Para los ejemplos de este documento se requiere tener instalados los siguientes: 
 
 ```{r install, eval = FALSE}
-install.packages(c("rgdal"))
+install.packages(c("rgdal", "raster", "mapview", "ggplot2", "rgl", "spdep", "caret", "tmap", "geospt" "twitteR", "MODISTools"))
 ```
+
+Este documento fue generado con [RStudio IDE] versión 0.99.1246, actualmente en Preview.
 
 <br>
 
@@ -29,7 +31,7 @@ install.packages(c("rgdal"))
 
 #### **1. PLANTEAR las preguntas apropiadas** 
 
-Ver las diapositivas.
+Ver las diapositivas del webinar.
 
 <br>
 
@@ -38,7 +40,7 @@ Ver las diapositivas.
 
 *a. Importar capas vector*
 
-Archivos vector pueden ser importados con el paquete **[rgdal]** como objetos de clase Spatial___DataFrame:
+En R podemos importar archivos vector con el paquete **[rgdal]** como objetos de clase Spatial___DataFrame:
 
 ```{r rgdal, warning = FALSE}
 library(rgdal)
@@ -49,7 +51,7 @@ summary(myShp)
 # myKML <- readOGR("data/llanos_kml.kml", layer = "llanos_kml")
 ```
 
-Shapefiles tambien pueden ser importados con el comando `shapefile` del paquete **[raster]** de manera mas simple:
+Shapefiles también pueden ser importados con el comando `shapefile` del paquete **[raster]** de manera más simple:
 
 ```{r raster_shp, warning = FALSE}
 library(raster)
@@ -59,9 +61,7 @@ spplot(shp)
 ```
 
 
-Visualizar con **[mapview]**
-
-Run devtools::install_github('rstudio/leaflet') to fix this issue.
+Podemos generar mapas web para visualizar información geográfica usando paquetes como **[leaflet]** o **[mapview]**. Con  **[mapview]** solo necesitamos una línea de código para crear un mapa web con los elementos básicos:
 
 ```{r warning = FALSE}
 library(mapview)
@@ -72,7 +72,7 @@ mapView(shp)
 
 *b. Importar capas raster*  
 
-Haciendo uso del paquete **[raster]**: archivos de una sola capa se importan con el comando `raster`, archivos con multiples capas se pueden importar con los comandos `stack` o `brick`:
+La importación de archivos raster en R se puede realizar con el paquete **[raster]**. Archivos de una sola capa se importan con el comando `raster`, mientras que archivos con múltiples capas se pueden importar con los comandos `stack` o `brick`:
 
 ```{r raster_raster}
 miTIFF <- raster("data/cropimg.tif")
@@ -81,8 +81,7 @@ plot(miTIFF)
 ```
 
 
-
-Visualizar con mapview: slideView (correr en la consola):
+El paquete **[mapview]** ofrece algunos métodos avanzados de visualización, por ejemplo la vista en slide (correr en la consola):
 
 ```{r, eval = FALSE}
 data(poppendorf)
@@ -91,7 +90,7 @@ stck2 <- subset(poppendorf, c(2, 3, 4))
 slideView(stck1, stck2)
 ```
 
-Visualizar con mapview: cubeView (correr en la consola)
+También podemos generar una vista de los datos en cubo 3D (correr en la consola y abrir en una nueva ventana):
 
 ```{r, eval = FALSE}
 kili_data <- system.file("extdata", "kiliNDVI.tif", package = "mapview")
@@ -103,19 +102,23 @@ cubeView(kiliNDVI)
 
 *c. Obtener datos georreferenciados usando APIs*
 
-ver [post Twitter] y lanzar [twitter-r Shiny app]
+Actualmente es posible acceder a datos desde aplicaciones web como Facebook o Twitter, entre otras, haciendo uso de sus APIs. Puedes ver un ejemplo de una app web para recuperar tweets geocodificados **[en este link]**.
 
 ```{r eval = FALSE}
 library(twitteR)
+
+# requiere autenticacion OAuth antes de ejecutar, ver post para instrucciones
 tweets <- twListToDF(searchTwitter("#dinner", n = 100, geocode = paste0("40.75,-74,10km")))
 tweets
 ```
 
+La explicación detallada la puedes encontrar **[en este post en mi blog]**.
+
 <br>
 
-*d. Descargar imagenes satelitales/informacion geografica*
+*d. Descargar imágenes satelitales/información geográfica*
 
-Por ejemplo, es posible  descargar escenas completas de MODIS usando el paquete **[modis]**. Se puede tambien descargar subconjuntos de datos de MODIS usando el paquete **[MODISTools]**:
+Podemos usar funciones de R para obtener imágenes satelitales y otros datasets en formato vector o raster que se encuentran libres para descarga desde servidores o repositorios en la web. Por ejemplo, es posible  descargar escenas completas de MODIS usando el paquete **[modis]**. Se puede también descargar subconjuntos de datos de MODIS usando el paquete **[MODISTools]**:
 
 ```{r, eval = FALSE}
 library(MODISTools)
@@ -126,34 +129,43 @@ MODISSubsets(LoadDat = SubsetExample, Products = "MOD13Q1", Bands = c("250m_16_d
 
 <br>
 
-La funcion [getData] del paquete **[raster]** permite descargar varios datasets, entre ellos, 'GADM', 'countries', 'SRTM', 'alt', y 'worldclim'.
+La función [getData] del paquete **[raster]** permite descargar varios datasets, entre ellos, 'GADM', 'countries', 'SRTM', 'alt', y 'worldclim'.
 
 <br>
 
 #### **3. PREPARAR los datos**  
 
-*a. Data cleaning*
+*a. Data cleaning and preparation*
 
-Archivos vect
+R nos permite preparar y transformar nuestros datos espaciales de ser necesario. El siguiente fragmento de código muestra cómo recortar la extensión de una capa raster con base en un polígono:
+
+```{r crop, eval = FALSE}
+img <- raster("c_2004-2005_30_classif_03_v3.tif")
+shp <- shapefile("footprints_2000_v2.shp")
+crop.img <- crop(img, shp)
+```
 
 <br>
 
 *b. Operaciones vector*
 
-Por ejemplo, operaciones como union, interseccion o punto en poligono pueden ser llevadas a cabo con el paquete **[raster]**: 
+Paquetes como **[rgeos]** o **[raster]** nos ayudan a efectuar operaciones de superposición comúnmente requeridas como unión, intersección o punto en polígono, entre otras: 
 
 ```{r}
 p <- shapefile(system.file("external/lux.shp", package="raster"))
 b <- as(extent(6, 6.4, 49.75, 50), 'SpatialPolygons')
 projection(b) <- projection(p)
 i <- intersect(p, b)
+plot(p)
+plot(b, add=TRUE, col='red')
+plot(i, add=TRUE, col='blue', lwd=2)
 ```
 
 <br>
 
 *c. Operaciones raster*
 
-El paquete **[raster]** tambien permite realizar de manera facil operaciones raster de analisis espacial como algebra de mapas, aplicacion de filtros, entre muchas otras, por ejemplo:
+El paquete **[raster]** también permite realizar de manera fácil operaciones raster de análisis espacial como álgebra de mapas, aplicación de filtros, entre muchas otras. Aquí un ejemplo de álgebra de mapas:
 
 ```{r}
 r <- raster(ncol=10, nrow=10)
@@ -161,7 +173,7 @@ r1 <- init(r, fun=runif)
 r2 <- init(r, fun=runif)
 r3 <- overlay(r1, r2, fun=function(a,b){return(a*b+a)} )  
 
-# funcion equivalente, eficiente si los valores pueden ser cargados en la memoria
+# función equivalente, eficiente si los valores pueden ser cargados en la memoria
 r4 <- r1 * r2 + r1
 ```
 
@@ -169,9 +181,9 @@ r4 <- r1 * r2 + r1
 
 #### **4. EXPLORAR los datos** 
 
-*a. Estadisticas descriptivas*
+*a. Estadísticas descriptivas*
 
-Analizar las estadisticas descriptivas de los datos:
+Después de haber importado los objetos espaciales podemos llevar a cabo análisis típicos de estadística descriptiva. Con una capa vector, por ejemplo, accedemos a los datos de la tabla de atributos de la siguiente forma:
 
 ```{r}
 vis <- shapefile("data/ba_LC80940792015255LGN00_sr.shp")@data
@@ -180,9 +192,9 @@ summary(vis[, 13:20])
 
 <br>
 
-*b. Graficos exploratorios*
+*b. Gráficos exploratorios*
 
-Analizar el diagrama de dispersión en 2D:
+Gráficos como diagramas de dispersión, boxplots, o gráficos de barras, pueden ser muy útiles para entender las características de nuestros datos:
 
 ```{r}
 library(ggplot2)
@@ -192,7 +204,7 @@ p <- qplot(vis$evi, vis$ndvi, color = vis$Landtype, shape = vis$Landtype,
 p
 ```
 
-Analizar el diagrama de dispersión en 3D:
+Con R también es posible crear visualizaciones que nos ayuden a analizar nuestros datos en más de dos dimensiones. Este es un ejemplo del diagrama de dispersión en 3D:
 
 ```{r}
 library(rgl)
@@ -201,9 +213,9 @@ with(vis, plot3d(XCOORD, YCOORD, ndvi, col = as.numeric(as.factor(Landtype))))
 
 <br>
 
-*c. Autocorrelacion espacial*
+*c. Autocorrelación espacial*
 
-Calcular el test Moran's I para autocorrelacion espacial global:
+Cuando trabajamos con datos espaciales es fundamental determinar si la autocorrelación espacial es estadísticamente significativa, como lo muestra el ejemplo siguiente donde se calcula el test I de Moran para autocorrelación espacial global:
 
 ```{r}
 library(spdep)
@@ -212,7 +224,7 @@ coords.OLD <- cbind(COL.OLD$X, COL.OLD$Y)
 moran.test(COL.OLD$CRIME, nb2listw(COL.nb, style="B"))
 ```
 
-Calcular el test Local G (estadistico Gi) para autocorrelacion espacial:
+De manera similar podemos evaluar la autocorrelación espacial local calculando estadísticos como Gi:
 
 ```{r}
 data(getisord)
@@ -224,16 +236,16 @@ cm.col <- cm.colors(length(brks)-1)
 image(x, y, t(matrix(G30, nrow=16, ncol=16, byrow=TRUE)), breaks=brks, col=cm.col, asp=1)
 text(xyz$x, xyz$y, round(G30, digits=1), cex=0.7)
 polygon(c(195,225,225,195), c(195,195,225,225), lwd=2)
-title(main=expression(paste("Values of the ", G[i], " statistic")))
+title(main=expression(paste("Valores del estadístico ", G[i])))
 ```
 
 <br>
 
 #### **5. MODELAR los datos**
 
-*a. Regresion*
+*a. Regresión*
 
-ejemplo spdep
+Cuando detectamos que la autocorrelación espacial de nuestros datos es estadísticamente significativa entonces debemos aplicar modelos de regresión apropiados como los modelos espaciales autorregresivos:
 
 ```{r sarlm, warning = FALSE}
 library(spdep)
@@ -244,9 +256,9 @@ summary(COL.lag.eig, correlation=TRUE)
 
 <br>
 
-*b. Clasificacion (Machine Learning)*
+*b. Clasificación (Machine Learning)*
 
-Las tecnicas de Machine Learning para clasificacion (RandomForests, SVM, etc) se pueden aplicar tanto a datos vector como a datos raster. ejemplo clasificacion raster. Primero importamos la imagen y el shapefile con las areas de entrenamiento:
+Las técnicas de Machine Learning para clasificación (RandomForests, SVM, etc) se pueden aplicar tanto a datos vector como a datos raster. Una aplicación muy común es el procesamiento de imágenes en proyectos de análisis de deforestación, cambio de uso del suelo, etcétera, donde deseamos categorizar los pixeles de la imagen con base en unas clases predefinidas. En un proceso de este tipo, por ejemplo, primero importamos la imagen y el shapefile con las áreas de entrenamiento:
 
 ```{r eval = FALSE}
 img <- brick("data/L7007057_20000316_refl")
@@ -255,7 +267,7 @@ trainData <- shapefile("C:/data/landsat/shps/UTM18N_32618/training_15.shp")
 responseCol <- "class"
 ```
 
-Luego extraemos de la imagen los valores de los pixeles para cada banda y para cada clase en las areas de entrenamiento:
+Luego extraemos los valores de los pixeles para cada banda de la imagen y para cada clase en las áreas de entrenamiento:
 
 ```{r eval = FALSE}
 dfAll = data.frame(matrix(vector(), 0, length(names(img)) + 1))
@@ -270,18 +282,21 @@ for (i in 1:length(unique(trainData[[responseCol]]))){
 sdfAll <- subset(dfAll[sample(1:nrow(dfAll), nsamples), ])
 ```
 
-Ajustamos el modelo con la tecnica de Machine Learning escogida, en este caso RandomForests, y realizamos la clasificacion (prediccion):
+Ajustamos el modelo con la técnica de Machine Learning escogida, RandomForests en este caso, y realizamos la clasificación (predicción):
 
 ```{r eval = FALSE}
+library(caret)
 modFit_rf <- train(as.factor(class) ~ B3 + B4 + B5, method = "rf", data = sdfAll)
 preds_rf <- raster::predict(img, modFit_rf)
 ```
 
+Para realizar la validación de los raster clasificados se pueden usar paquetes como **[RStoolbox]** o **[diffeR]**.
+
 <br>
 
-*c. Estadistica espacial: Geoestadistica, Patrones de puntos espaciales*
+*c. Estadística espacial: Geoestadística, Patrones de puntos espaciales*
 
-Ejemplo geoestadistica (correr en R GUI):
+En ciertos análisis se puede requerir aplicar técnicas de la estadística espacial como la geostadística. El siguiente es un ejemplo de diseño de redes óptimas de muestreo usando algoritmos genéticos con base en un modelo estimado previamente mediante kriging (correr en R GUI preferiblemente):
 
 ```{r geospt, eval = FALSE}
 library(geospt)
@@ -292,7 +307,7 @@ example(simPtsOptNet)
 
 #### **6. COMUNICAR los resultados**
 
-Con R cada vez es mas sencillo generar mapas tematicos de calidad. Un paquete que nos puede ayudar en esa tarea es **[tmap]**:
+Este es uno de los pasos claves en un ciclo de trabajo de Data Science. Si trabajamos con datos espaciales R nos permite en la actualidad generar mapas temáticos, por ejemplo haciendo uso del paquete **[tmap]**:
 
 ```{r thematic_map}
 library(tmap)
@@ -311,31 +326,39 @@ tm_style_classic(inner.margins=c(.04,.03, .02, .01), legend.position = c("left",
     earth.boundary = TRUE, space.color="grey90")
 ```
 
-Con paquetes como **[shiny]** y **[flexdashboard]** podemos ahora desarrollar facilmente aplicaciones web que permitan a los usuarios manipular, visualizar e interactuar con los datos y los resultados de nuestros modelos. 
+Con paquetes como **[shiny]** y **[flexdashboard]** podemos ahora desarrollar fácilmente aplicaciones web que permitan a los usuarios manipular, visualizar e interactuar con los datos y los resultados de nuestros modelos. 
 
-Ejemplo Shiny app: Numero de vehiculos de buses por rutas para un area urbana: [http://shiny.rstudio.com/gallery/bus-dashboard.html].
+En este ejemplo, una aplicación desarrollada con Shiny, el usuario puede conocer el número de vehículos de buses por rutas para un área urbana: [http://shiny.rstudio.com/gallery/bus-dashboard.html]. 
 
-Ejemplo Shiny/flexdashboard app: Explorar la diversidad de los vecindarios para un area metropolitana dada: [https://walkerke.shinyapps.io/neighborhood_diversity/].
+En esta segunda aplicación, desarrollada con Shiny/flexdashboard, el usuario puede explorar la diversidad de los vecindarios para un área metropolitana: [https://walkerke.shinyapps.io/neighborhood_diversity/].
 
+<br>
 
-El codigo fuente de este documento escrito en RMarkdown se puede descargar desde [https://github.com/amsantac/extras] (usar el boton 'Clone or Download') de la carpeta '2016-07-13-spatial-data-science-r-webinar'
+#### **Descarga los materiales de este documento**
 
+El código fuente de este documento escrito en RMarkdown se puede descargar desde [https://github.com/amsantac/extras] (usar el boton 'Clone or Download') en la carpeta '2016-07-13-spatial-data-science-r-webinar'.
 
-ftp://ftp.bgc-jena.mpg.de/pub/outgoing/mforkel/Rcourse/spatialR_2015.pdf
-R-SIG-Geo mailing list
+<br>
+
 
 [rgdal]: https://cran.r-project.org/web/packages/rgdal/index.html
 [raster]: https://cran.r-project.org/web/packages/raster/index.html
+[leaflet]: https://cran.r-project.org/web/packages/leaflet/index.html
+[rgeos]: https://cran.r-project.org/web/packages/rgeos/index.html
 [getData]: http://search.r-project.org/usr/share/doc/library/raster/html/getData.html
 [tmap]: https://cran.r-project.org/web/packages/tmap/index.html
 [mapview]: https://cran.r-project.org/web/packages/mapview/index.html
+[RStoolbox]: https://cran.r-project.org/web/packages/RStoolbox/index.html
+[diffeR]: https://cran.r-project.org/web/packages/diffeR/index.html
 [shiny]: https://cran.r-project.org/web/packages/shiny/index.html
 [flexdashboard]: https://cran.r-project.org/web/packages/flexdashboard/index.html
-[post Twitter]: http://amsantac.co/blog/es/2016/05/28/twitter-r-es.html
+[en este link]: https://amsantac.shinyapps.io/twitter-r/
+[en este post en mi blog]: http://amsantac.co/blog/es/2016/05/28/twitter-r-es.html
 [twitter-r Shiny app]: https://amsantac.shinyapps.io/twitter-r/
 [modis]: http://r-forge.r-project.org/R/?group_id=1252
 [MODISTools]: https://cran.r-project.org/web/packages/MODISTools/index.html
 [http://shiny.rstudio.com/gallery/bus-dashboard.html]: http://shiny.rstudio.com/gallery/bus-dashboard.html
 [https://walkerke.shinyapps.io/neighborhood_diversity/]: https://walkerke.shinyapps.io/neighborhood_diversity/
 [https://github.com/amsantac/extras]: https://github.com/amsantac/extras
+[RStudio IDE]: https://www.rstudio.com/products/rstudio/download/
 
