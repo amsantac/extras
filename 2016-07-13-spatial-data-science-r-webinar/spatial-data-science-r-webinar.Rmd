@@ -1,0 +1,371 @@
+---
+title: "Intro to Spatial Data Science with R"
+author: "Ali Santacruz"
+date: "July 13, 2016"
+output: 
+  html_document:
+    keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, cache = TRUE)
+```
+
+<br>
+
+There are a lot of R packages useful for working with spatial data. The following packages are required to be installed in the R environment for running the examples shown below: 
+
+```{r install, eval = FALSE}
+install.packages(c("rgdal", "raster", "mapview", "ggplot2", "rgl", "spdep", "caret", "tmap", "geospt" "twitteR", "MODISTools"))
+```
+
+This document was generated with [RStudio IDE] 0.99.1246, currently a Preview version.
+
+<br>
+
+
+## The Data Science Process
+
+![](images/data_science_process.jpg)
+
+<br>
+
+
+#### **1. ASK the right question** 
+
+See slide 13 in the **[webinar slide show]**.
+
+<br>
+
+#### **2. GET the data**  
+
+
+*a. Import vector layers*
+
+Vector layer files can be imported into R as objects  of class Spatial___DataFrame using **[rgdal]**:
+
+```{r rgdal, warning = FALSE}
+library(rgdal)
+myShp <- readOGR("data/llanos.shp", layer = "llanos")
+summary(myShp)
+
+# KML example
+# myKML <- readOGR("data/llanos_kml.kml", layer = "llanos_kml")
+```
+
+Shapefiles can be imported into R as well using the `shapefile` command from the **[raster]** package in a simpler way:
+
+```{r raster_shp, warning = FALSE}
+library(raster)
+shp <- shapefile("data/llanos.shp")
+shp
+spplot(shp)
+```
+
+
+We can create web maps for interactive visualization of geographic information using packages such as **[leaflet]** or **[mapview]**. With  **[mapview]** we only need one line of code to generate a web map with basic controls:
+
+```{r warning = FALSE}
+library(mapview)
+mapView(shp)
+```
+
+<br>
+
+*b. Import raster layers*  
+
+Raster files can be imported into R through the **[raster]** package. One-layer raster files are imported using the `raster` command, while multiple-layer raster files can be imported with commands such as  `stack` or `brick`:
+
+```{r raster_raster}
+miTIFF <- raster("data/cropimg.tif")
+miTIFF
+plot(miTIFF)
+```
+
+
+The **[mapview]** package offers some advanced visualization methods like the slideView, for instance (run in the R console):
+
+```{r, eval = FALSE}
+data(poppendorf)
+stck1 <- subset(poppendorf, c(3, 4, 5))
+stck2 <- subset(poppendorf, c(2, 3, 4))
+slideView(stck1, stck2)
+```
+
+We can create a 3D cube view as well (run in the R console and open in a new window):
+
+```{r, eval = FALSE}
+kili_data <- system.file("extdata", "kiliNDVI.tif", package = "mapview")
+kiliNDVI <- stack(kili_data)
+cubeView(kiliNDVI)
+```
+
+<br>
+
+*c. Access geocoded data from APIs*
+
+Currently, it is possible to access data from web apps such as Facebook or Twitter, among others, through their APIs. An example showing a web app created to retrieve geocoded tweets can be found **[in this link]**.
+
+```{r eval = FALSE}
+library(twitteR)
+
+# require OAuth authentication before running, see post for instructions
+tweets <- twListToDF(searchTwitter("#dinner", n = 100, geocode = paste0("40.75,-74,10km")))
+tweets
+```
+
+A detailed explaination is provided in **[this post in my blog]**.
+
+<br>
+
+*d. Download satellite imagery/geographic information*
+
+There are a number of R packages that are helpful for getting satellite imagery and other datasets in vector and raster format that are available for download from different web servers. For example, it is possible to download entire MODIS scenes using the **[modis]** package. Also, data subsets from MODIS can be downloaded through the **[MODISTools]** package:
+
+```{r, eval = FALSE}
+library(MODISTools)
+data(SubsetExample)
+MODISSubsets(LoadDat = SubsetExample, Products = "MOD13Q1", Bands = c("250m_16_days_EVI",
+"250m_16_days_pixel_reliability"), Size = c(0,0), StartDate = TRUE)
+```
+
+<br>
+
+The [getData] function from the **[raster]** package allows the download of several freely-available datasets, including 'GADM', 'countries', 'SRTM', 'alt', and 'worldclim'.
+
+<br>
+
+#### **3. PREPARE the data**  
+
+*a. Data cleaning and preparation*
+
+R commands can help us to prepare and transform our spatial data if required. The code chunk below shows how to clip a raster dataset using a polygon layer:
+
+```{r crop, eval = FALSE}
+img <- raster("c_2004-2005_30_classif_03_v3.tif")
+shp <- shapefile("footprints_2000_v2.shp")
+crop.img <- crop(img, shp)
+```
+
+<br>
+
+*b. Vector operations*
+
+Packages such as **[rgeos]** and **[raster]** support common overlay operations including union, intersection or points in polygon, among others: 
+
+```{r}
+p <- shapefile(system.file("external/lux.shp", package="raster"))
+b <- as(extent(6, 6.4, 49.75, 50), 'SpatialPolygons')
+projection(b) <- projection(p)
+i <- intersect(p, b)
+plot(p)
+plot(b, add=TRUE, col='red')
+plot(i, add=TRUE, col='blue', lwd=2)
+```
+
+<br>
+
+*c. Raster operations*
+
+Through the **[raster]** package we can easily perform typical raster operations like map algebra, filtering, resampling and many others. Here is a map algebra example:
+
+```{r}
+r <- raster(ncol = 10, nrow = 10)
+r1 <- init(r, fun = runif)
+r2 <- init(r, fun = runif)
+r3 <- overlay(r1, r2, fun = function(a, b){return(a*b + a)} )  
+
+# if rasters can be loaded on memory, then the command line below can be more efficient
+r4 <- r1 * r2 + r1
+```
+
+<br>
+
+#### **4. EXPLORE the data** 
+
+*a. Descriptive statistics*
+
+After importing spatial data, we can conduct common descriptive statistic analysis. The attribute table of a vector layer can be accessed and then processed for summary statistics in the following way:
+
+```{r}
+vis <- shapefile("data/ba_LC80940792015255LGN00_sr.shp")@data
+summary(vis[, 13:20])
+```
+
+<br>
+
+*b. Exploratory graphics*
+
+Graphics such as scatter plots, box plots or bar plots can be quite useful for understanding the characteristics of our data:
+
+```{r}
+library(ggplot2)
+p <- qplot(vis$evi, vis$ndvi, color = vis$Landtype, shape = vis$Landtype, 
+             main = "EVI vs. NDVI", xlab = "EVI", ylab = "NDVI") + geom_point(size = 4) +
+    guides(colour = guide_legend("Type"), shape = guide_legend("Type"))
+p
+```
+
+We can easily create with R data visualizations displaying more than two dimmensions. Here is an example of a 3-D scatter plot:
+
+```{r}
+library(rgl)
+with(vis, plot3d(XCOORD, YCOORD, ndvi, col = as.numeric(as.factor(Landtype))))
+```
+
+<br>
+
+*c. Spatial autocorrelation*
+
+When we work with spatial data, it is quite important to determine whether spatial autocorrelation of our data is statistically significant, as shown in the following example where Moran's I test is calculated for analyzing global spatial autocorrelation:
+
+```{r}
+library(spdep)
+data(oldcol)
+coords.OLD <- cbind(COL.OLD$X, COL.OLD$Y)
+moran.test(COL.OLD$CRIME, nb2listw(COL.nb, style="B"))
+```
+
+Similarly, we can evaluate local spatial autocorrelation through statistics measures such as Gi:
+
+```{r}
+data(getisord)
+xycoords <- cbind(xyz$x, xyz$y)
+nb30 <- dnearneigh(xycoords, 0, 30)
+G30 <- localG(xyz$val, nb2listw(nb30, style="B"))
+brks <- seq(-5,5,1)
+cm.col <- cm.colors(length(brks)-1)
+image(x, y, t(matrix(G30, nrow=16, ncol=16, byrow=TRUE)), breaks=brks, col=cm.col, asp=1)
+text(xyz$x, xyz$y, round(G30, digits=1), cex=0.7)
+polygon(c(195,225,225,195), c(195,195,225,225), lwd=2)
+title(main=expression(paste("Values of the statistic ", G[i])))
+```
+
+<br>
+
+#### **5. MODEL the data**
+
+*a. Regression*
+
+When we find spatial autocorrelation in our data is statistically significant, then we need to apply more appropriate regression methods such as spatial autoregressive models:
+
+```{r sarlm, warning = FALSE}
+library(spdep)
+data(oldcol)
+COL.lag.eig <- lagsarlm(CRIME ~ INC + HOVAL, data = COL.OLD, listw = nb2listw(COL.nb, style="W"), method = "eigen")
+summary(COL.lag.eig, correlation=TRUE)
+```
+
+<br>
+
+*b. Classification (Machine Learning)*
+
+Machine Learning classification techniques (RandomForests, SVM, etc) can be applied to both vector and raster data. A very common application is image processing for deforestation or land cover change studies where we are interested in categorizing image pixels based on predefined classes. For this kind of task, we first import the image and a shapefile with training data:
+
+```{r eval = FALSE}
+img <- brick("data/L7007057_20000316_refl")
+names(img) <- c(paste0("B", 1:5, coll = ""), "B7")
+trainData <- shapefile("C:/data/landsat/shps/UTM18N_32618/training_15.shp")
+responseCol <- "class"
+```
+
+Then we extract pixel values for each image band for every training area:
+
+```{r eval = FALSE}
+dfAll = data.frame(matrix(vector(), 0, length(names(img)) + 1))
+for (i in 1:length(unique(trainData[[responseCol]]))){
+  category <- unique(trainData[[responseCol]])[i]
+  categorymap <- trainData[trainData[[responseCol]] == category,]
+  dataSet <- extract(img, categorymap)
+  dataSet <- lapply(dataSet, function(x){cbind(x, class = as.numeric(rep(category, nrow(x))))})
+  df <- do.call("rbind", dataSet)
+  dfAll <- rbind(dfAll, df)
+}
+sdfAll <- subset(dfAll[sample(1:nrow(dfAll), nsamples), ])
+```
+
+Then we adjust a model with a Machine Learning technique we select (example below uses RandomForests) and conduct image classification (prediction):
+
+```{r eval = FALSE}
+library(caret)
+modFit_rf <- train(as.factor(class) ~ B3 + B4 + B5, method = "rf", data = sdfAll)
+preds_rf <- raster::predict(img, modFit_rf)
+```
+
+For validation of classified data we can use packages like  **[RStoolbox]** or **[diffeR]**.
+
+<br>
+
+*c. Spatial statistics: Geostatistics, Spatial point patterns*
+
+For some types of analysis we may need to apply spatial statistics techniques, such those developed in the field of geostatistics. Example below shows design of optimal sampling networks using genetic algorithms based on a geostatistical model fit through kriging (run in R GUI preferably):
+
+```{r geospt, eval = FALSE}
+library(geospt)
+example(simPtsOptNet)
+```
+
+<br>
+
+#### **6. COMMUNICATE the results**
+
+This is a key step in a Data Science process. For spatial data R currently supports the creation of thematic maps. **[tmap]** is one of the R packages available for this task:
+
+```{r thematic_map}
+library(tmap)
+data(land, World)
+tm_shape(land, projection="eck4") +
+    tm_raster("elevation", breaks=c(-Inf, 250, 500, 1000, 1500, 2000, 2500, 3000, 4000, Inf),
+        palette = terrain.colors(9), title="Elevation", auto.palette.mapping=FALSE) +
+tm_shape(World) +
+    tm_borders("grey20") +
+    tm_grid(projection="longlat", labels.size = .5) +
+    tm_text("name", size="AREA") +
+tm_compass(position = c(.65, .15), color.light = "grey90") +
+tm_credits("Eckert IV projection", position = c(.85, 0)) +
+tm_style_classic(inner.margins=c(.04,.03, .02, .01), legend.position = c("left", "bottom"),
+    legend.frame = TRUE, bg.color="lightblue", legend.bg.color="lightblue",
+    earth.boundary = TRUE, space.color="grey90")
+```
+
+Using packages such as **[shiny]** and **[flexdashboard]** we are currently able to easily develop web apps for helping users to manipulate, visualize and interact with data and results from our models. 
+
+In this Shiny app, users can find out the number of vehicles available for a given bus route in an urban area: [http://shiny.rstudio.com/gallery/bus-dashboard.html]. 
+
+In this other app, developed with Shiny and flexdashboard, users can explore race diversity for different neighborhoods in a metropolitan area: [https://walkerke.shinyapps.io/neighborhood_diversity/].
+
+<br>
+
+#### **Download the materials for this document**
+
+Source code for this RMarkdown document can be downloaded from [https://github.com/amsantac/extras] (use the 'Clone or Download' button) in the '2016-07-13-spatial-data-science-r-webinar' folder. The video associated to this webinar can be seen [in this link][YouTube].
+
+<br>
+
+**[Back to my blog]**
+
+<br>
+
+[rgdal]: https://cran.r-project.org/web/packages/rgdal/index.html
+[raster]: https://cran.r-project.org/web/packages/raster/index.html
+[leaflet]: https://cran.r-project.org/web/packages/leaflet/index.html
+[rgeos]: https://cran.r-project.org/web/packages/rgeos/index.html
+[getData]: http://search.r-project.org/usr/share/doc/library/raster/html/getData.html
+[tmap]: https://cran.r-project.org/web/packages/tmap/index.html
+[mapview]: https://cran.r-project.org/web/packages/mapview/index.html
+[RStoolbox]: https://cran.r-project.org/web/packages/RStoolbox/index.html
+[diffeR]: https://cran.r-project.org/web/packages/diffeR/index.html
+[shiny]: https://cran.r-project.org/web/packages/shiny/index.html
+[flexdashboard]: https://cran.r-project.org/web/packages/flexdashboard/index.html
+[in this link]: https://amsantac.shinyapps.io/twitter-r/
+[in this post in my blog]: http://amsantac.co/blog/en/2016/05/28/twitter-r.html
+[twitter-r Shiny app]: https://amsantac.shinyapps.io/twitter-r/
+[modis]: http://r-forge.r-project.org/R/?group_id=1252
+[MODISTools]: https://cran.r-project.org/web/packages/MODISTools/index.html
+[http://shiny.rstudio.com/gallery/bus-dashboard.html]: http://shiny.rstudio.com/gallery/bus-dashboard.html
+[https://walkerke.shinyapps.io/neighborhood_diversity/]: https://walkerke.shinyapps.io/neighborhood_diversity/
+[https://github.com/amsantac/extras]: https://github.com/amsantac/extras
+[RStudio IDE]: https://www.rstudio.com/products/rstudio/download/
+[webinar slide show]: http://www.slideshare.net/amsantac/spatial-data-science-with-r
+[YouTube]: https://youtu.be/EbbSY6EJ4js
+[Back to my blog]: http://amsantac.co/blog/en/2016/08/07/spatial-data-science-r.html

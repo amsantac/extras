@@ -2,7 +2,9 @@
 title: "Intro a Spatial Data Science con R"
 author: "Alí Santacruz"
 date: "Julio 13, 2016"
-output: html_document
+output: 
+  html_document:
+    keep_md: true
 ---
 
 ```{r setup, include=FALSE}
@@ -31,7 +33,7 @@ Este documento fue generado con [RStudio IDE] versión 0.99.1246, actualmente en 
 
 #### **1. PLANTEAR las preguntas apropiadas** 
 
-Ver las diapositivas del webinar.
+Ver la diapositiva 13 de la **[presentación del webinar]**.
 
 <br>
 
@@ -336,10 +338,13 @@ En esta segunda aplicación, desarrollada con Shiny/flexdashboard, el usuario pue
 
 #### **Descarga los materiales de este documento**
 
-El código fuente de este documento escrito en RMarkdown se puede descargar desde [https://github.com/amsantac/extras] (usar el boton 'Clone or Download') en la carpeta '2016-07-13-spatial-data-science-r-webinar'.
+El código fuente de este documento escrito en RMarkdown se puede descargar desde [https://github.com/amsantac/extras] (usar el boton 'Clone or Download') en la carpeta '2016-07-13-spatial-data-science-r-webinar'. El video del webinar asociado con esta presentacion se puede ver [en este link].
 
 <br>
 
+**[Volver al blog]**
+
+<br>
 
 [rgdal]: https://cran.r-project.org/web/packages/rgdal/index.html
 [raster]: https://cran.r-project.org/web/packages/raster/index.html
@@ -361,4 +366,6 @@ El código fuente de este documento escrito en RMarkdown se puede descargar desde
 [https://walkerke.shinyapps.io/neighborhood_diversity/]: https://walkerke.shinyapps.io/neighborhood_diversity/
 [https://github.com/amsantac/extras]: https://github.com/amsantac/extras
 [RStudio IDE]: https://www.rstudio.com/products/rstudio/download/
-
+[presentación del webinar]: http://www.slideshare.net/amsantac/spatial-data-science-con-r
+[en este link]: https://youtu.be/EbbSY6EJ4js
+[Volver al blog]: http://amsantac.co/blog/es/2016/08/07/spatial-data-science-r-es.html
