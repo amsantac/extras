@@ -8,7 +8,7 @@ library(SkyWatchr)
 # Request an API key from http://www.skywatch.co/request-access
 
 # Store your API key in an object
-api_key <- readLines("api_key.txt")
+api_key <- readLines("api_key.txt")   ## or just: api_key <- "your_personal_api_key" 
 
 # Now you can start sending queries to the SkyWatch API
 
@@ -29,7 +29,7 @@ library(raster)
 my_shp <- shapefile("data/study_area_latlon.shp")
 res <- querySW(api_key, time_period = "2015-8", longitude_latitude = my_shp)
 
-# extract boundary box of a given dataset
+# extract boundary box of a given dataset (install development version 0.5-1 from https://github.com/amsantac/SkyWatchr)
 sppolygon <- getPolygon(res, 24)
 
 library(mapview)
