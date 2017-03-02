@@ -114,7 +114,7 @@ tweets <- twListToDF(searchTwitter("#dinner", n = 100, geocode = paste0("40.75,-
 tweets
 ```
 
-A detailed explaination is provided in **[this post in my blog]**.
+A detailed explaination is provided **[in this post in my blog]**.
 
 <br>
 
